@@ -1,0 +1,64 @@
+@startuml
+
+actor User as user
+participant "Vinmart" as vinmart
+participant "API Server" as apiServer
+database Database as database
+
+group Successful case
+
+user -> vinmart : User access to user's setting screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: GET \nEndpoint: /api/v1/users/:userId/notification-settings\nHeader: { authorization }\nPayload: {}
+
+activate apiServer
+
+apiServer ->> database : Query "User Setting" table by "user_id" attribute
+
+activate database
+
+database -->> apiServer : Return notification settings
+
+deactivate database
+
+apiServer -->> vinmart : [*] Get user's notification settings success\nResponse\nMethod: GET \nEndpoint: /api/v1/users/:userId/notification-settings\nStatus: 200\nPayload: { enableEmailNotification, enableOrderNotification, enableGeneralNotification }
+
+deactivate apiServer
+
+vinmart --> user : Render notification settings to screen 
+
+deactivate vinmart
+
+end
+
+group Successful case
+
+user -> vinmart : User access to setting notifications screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: PATCH \nEndpoint: /api/v1/users/:userId/notification-settings\nHeader: { authorization }\nPayload: { enableEmailNotification, enableOrderNotification, enableGeneralNotification }
+
+activate apiServer
+
+apiServer ->> database : Update user's notification settings with received value
+
+activate database
+
+database -->> apiServer : Return notification settings
+
+deactivate database
+
+apiServer -->> vinmart : [*] Update user's notification settings success\nResponse\nMethod: PATCH \nEndpoint: /api/v1/users/:userId/notification-settings\nStatus: 200\nPayload: { enableEmailNotification, enableOrderNotification, enableGeneralNotification }
+
+deactivate apiServer
+
+vinmart --> user : Render new notification settings to screen 
+
+deactivate vinmart
+
+end
+
+@enduml

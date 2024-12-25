@@ -1,0 +1,125 @@
+@startuml
+
+actor User as user
+participant "Vinmart" as vinmart
+participant "API Server" as apiServer
+database Database as database
+
+group Successful case
+
+user -> vinmart : User access to order screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: GET \nEndpoint: api/v1/users/:userId/orders\nHeader: { authorization }\nPayload: {}
+
+activate apiServer
+
+apiServer ->> database : Query "Order" table to get all user's Order
+
+activate database
+
+database -->> apiServer : Return orders
+
+deactivate database
+
+apiServer -->> vinmart : [*] Get orders success\nResponse\nMethod: GET \nEndpoint: api/v1/users/:userId/orders\nStatus: 200\nPayload: { orders }
+
+deactivate apiServer
+
+vinmart --> user : Render orders to screen 
+
+deactivate vinmart
+
+end
+
+group Successful case
+
+user -> vinmart : User access to order screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: POST \nEndpoint: api/v1/users/:userId/orders\nHeader: { authorization }\nPayload: { shippingMethodId, addressId, paymentMethodId }
+
+activate apiServer
+
+apiServer ->> database : Create new user's order with received value
+
+activate database
+
+database -->> apiServer : Return order
+
+apiServer ->> database : Query "Cart Item" table to get all items of current user
+
+database -->> apiServer : Return cart items
+
+apiServer ->> database : Add queried items to "Order Item" table
+
+database -->> apiServer : Response success
+
+apiServer ->> database : Add "price" of current order to "Order" table
+
+database -->> apiServer : Response success
+
+apiServer ->> database : Remove all cart items of current user on "Cart Item" table
+
+database -->> apiServer : Response success
+
+apiServer ->> database : Add "Order Placed" status to "Order Status" table
+
+database -->> apiServer : Return order status
+
+apiServer ->> database : Query "Order Status" table to get all statuses of current order
+
+database -->> apiServer : Return order statuses
+
+
+deactivate database
+
+apiServer -->> vinmart : [*] Create new order success\nResponse\nMethod: POST \nEndpoint: api/v1/users/:userId/orders\nStatus: 200\nPayload: { id, shippingMethodId, addressId, paymentMethodId, total, orderStatuses }
+
+deactivate apiServer
+
+vinmart --> user : Render order to screen 
+
+deactivate vinmart
+
+end
+
+group Successful case
+
+user -> vinmart : User access to order screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: PATCH \nEndpoint: api/v1/users/:userId/orders/:orderId\nHeader: { authorization }\nPayload: { shippingMethodId, addressId, paymentMethodId }
+
+activate apiServer
+
+apiServer ->> database : Update user's payment method, shipping method or address at "Order" table
+
+activate database
+
+database -->> apiServer : Return order
+
+apiServer ->> database : Add new updated status to "Order Status" table
+
+database -->> apiServer : Response success
+
+apiServer ->> database : Query "Order Status" table to get all statuses of current order
+
+database -->> apiServer : Return order statuses
+
+deactivate database
+
+apiServer -->> vinmart : [*] Update order success\nResponse\nMethod: PATCH \nEndpoint: api/v1/users/:userId/orders/:orderId\nStatus: 200\nPayload: { id, shippingMethodId, addressId, paymentMethodId, total, orderStatuses }
+
+deactivate apiServer
+
+vinmart --> user : Render update to screen
+
+deactivate vinmart
+
+end
+
+@enduml

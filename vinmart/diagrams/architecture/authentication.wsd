@@ -1,0 +1,20 @@
+@startuml
+
+top to bottom direction
+
+actor "[1] - User" as user
+database "[3] - Database" as database
+
+node "[2] - Authentication Service" {
+  component "[4] - API Server" as apiServer
+  component "[5] - Email Service" as emailService
+  component "[6] - SMS Service" as smsService
+
+  apiServer -up-> emailService
+  apiServer -down-> smsService
+}
+
+user -right-> apiServer
+apiServer -right-> database
+
+@enduml

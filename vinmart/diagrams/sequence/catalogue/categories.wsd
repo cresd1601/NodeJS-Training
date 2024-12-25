@@ -1,0 +1,147 @@
+@startuml
+
+actor User as user
+participant "Vinmart" as vinmart
+participant "API Server" as apiServer
+participant "Cloud Storage Service" as cloudStorageService
+database Database as database
+
+group Successful case
+
+user -> vinmart : User access to home screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: GET \nEndpoint: /api/v1/catalogue/categories\nHeader: { authorization }\nPayload: {}
+
+activate apiServer
+
+apiServer ->> database : Query "Category" table joined with "Image" table \nby "categoryId" attribute
+
+activate database
+
+database -->> apiServer : Return all categories included image
+
+deactivate database
+
+apiServer -->> vinmart : [*] Get all categories success\nResponse\nMethod: GET \nEndpoint: /api/v1/catalogue/categories\nStatus: 200\nPayload: { categories }
+
+deactivate apiServer
+
+vinmart --> user : Render categories list to screen 
+
+deactivate vinmart
+
+end
+
+group Successful case
+
+user -> vinmart : User access to admin screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: POST \nEndpoint: /api/v1/catalogue/categories\nHeader: { authorization }\nPayload: { name, image }
+
+activate apiServer
+
+apiServer ->> database : Query "Category" table by "name" attribute
+
+activate database
+
+database -->> apiServer : Cannot found record
+
+group Asynchronous - Upload Image to Cloud Storage
+
+apiServer ->> cloudStorageService: Send received image from client \nto cloud storage service
+
+activate cloudStorageService
+
+cloudStorageService -->> apiServer: Response success & return uploaded image URL
+
+deactivate cloudStorageService
+
+end
+
+apiServer ->> database: Update new URL to "Image" table \nby "categoryId" attribute
+
+database -->> apiServer : Response success
+
+apiServer ->> database : Create new category with inputted "name" & responsed "image"
+
+database -->> apiServer : Return created category
+
+deactivate database
+
+apiServer -->> vinmart : [*] Created new category success\nResponse\nMethod: POST \nEndpoint: /api/v1/catalogue/categories\nStatus: 200\nPayload: { id, name, image, createdAt, updatedAt }
+
+deactivate apiServer
+
+vinmart --> user : Render categories list to screen 
+
+deactivate vinmart
+
+else Failure case 1
+
+user -> vinmart : User access to admin screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: POST \nEndpoint: /api/v1/catalogue/categories\nHeader: { authorization }\nPayload: { name, image }
+
+activate apiServer
+
+apiServer ->> database : Query "Category" table by "name" attribute
+
+activate database
+
+database -->> apiServer : Found record
+
+deactivate database
+
+apiServer -->> vinmart : [*] Entered "name" is already registered\nResponse\nMethod: POST \nEndpoint: /api/v1/catalogue/categories\nStatus: 409\nPayload: { errors }
+
+deactivate apiServer
+
+vinmart --> user : Dispay Error Message\nMessage: Name already registered
+
+deactivate vinmart
+
+else Failure case 2
+
+user -> vinmart : User access to admin screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: POST \nEndpoint: /api/v1/catalogue/categories\nHeader: { authorization }\nPayload: { name, image }
+
+activate apiServer
+
+apiServer -->> vinmart : [*] Uploaded file with unsupported media type\nResponse\nMethod: POST \nEndpoint: /api/v1/catalogue/categories\nStatus: 415\nPayload: { errors }
+
+deactivate apiServer
+
+vinmart --> user: Dispay Error Message\nMessage: The image uploaded with wrong media type
+
+deactivate vinmart
+
+else Failure case 3
+
+user -> vinmart : User access to admin screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: POST \nEndpoint: /api/v1/catalogue/categories\nHeader: { authorization }\nPayload: { name, image }
+
+activate apiServer
+
+apiServer -->> vinmart : [*] Uploaded file too large\nResponse\nMethod: POST \nEndpoint: /api/v1/catalogue/categories\nStatus: 413\nPayload: { errors }
+
+deactivate apiServer
+
+vinmart --> user: Dispay Error Message\nMessage: The image uploaded with too large size
+
+deactivate vinmart
+
+end
+
+@enduml

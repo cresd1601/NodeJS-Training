@@ -1,0 +1,117 @@
+@startuml
+
+actor User as user
+participant "Vinmart" as vinmart
+participant "API Server" as apiServer
+database Database as database
+
+group Successful case
+
+user -> vinmart : User access to product's reviews screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: GET \nEndpoint: /api/v1/catalogue/products/:productId/reviews\nHeader: { authorization }\nPayload: {}
+
+activate apiServer
+
+apiServer ->> database : Query "Review" table joined with "Image" & "User" tables \nby "productId" and "userId" attribute
+
+activate database
+
+database -->> apiServer : Return reviews list with user's image
+
+deactivate database
+
+apiServer -->> vinmart : [*] Get product's reviews success\nResponse\nMethod: GET \nEndpoint: /api/v1/catalogue/products/:productId/reviews\nStatus: 200\nPayload: { reviews }
+
+deactivate apiServer
+
+vinmart --> user : Render product's reviews to screen 
+
+deactivate vinmart
+
+else Failure case
+
+user -> vinmart : User access to product's reviews screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: GET \nEndpoint: /api/v1/catalogue/products/:productId/reviews\nHeader: { authorization }\nPayload: {}
+
+activate apiServer
+
+apiServer ->> database : Query "Review" table joined with "Image" & "User" tables \nby "productId" and "userId" attribute
+
+activate database
+
+database -->> apiServer : Can not find "productId"
+
+deactivate database
+
+apiServer -->> vinmart : [*] Endpoint is wrong or product deleted\nResponse\nMethod: GET \nEndpoint: /api/v1/catalogue/products/:productId/reviews\nStatus: 404\nPayload: { errors }
+
+deactivate apiServer
+
+vinmart --> user : Redirect to 404 not found screen 
+
+deactivate vinmart
+
+end
+
+group Successful case
+
+user -> vinmart : User access to add review screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: POST \nEndpoint: /api/v1/catalogue/products/:productId/reviews\nHeader: { authorization }\nPayload: { rating, description }
+
+activate apiServer
+
+apiServer ->> database : Create new review with inputted "rating" & "description"
+
+activate database
+
+database -->> apiServer : Return created review
+
+deactivate database
+
+apiServer -->> vinmart : [*] Get product's reviews success\nResponse\nMethod: POST \nEndpoint: /api/v1/catalogue/products/:productId/reviews\nStatus: 200\nPayload: { userName, userImage, rating, description, ... }
+
+deactivate apiServer
+
+deactivate vinmart
+
+vinmart --> user : Redirect product's reviews to screen 
+
+else Failure case
+
+user -> vinmart : User access to add review screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: POST \nEndpoint: /api/v1/catalogue/products/:productId/reviews\nHeader: { authorization }\nPayload: { rating, description }
+
+activate apiServer
+
+apiServer ->> database : Query "Review" table joined with "Image" & "User" tables \nby "productId" and "userId" attribute
+
+activate database
+
+database -->> apiServer : Can not find "productId"
+
+deactivate database
+
+apiServer -->> vinmart : [*] Endpoint is wrong or product deleted\nResponse\nMethod: POST \nEndpoint: /api/v1/catalogue/products/:productId/reviews\nStatus: 404\nPayload: { errors }
+
+deactivate apiServer
+
+vinmart --> user : Redirect to 404 not found screen 
+
+deactivate vinmart
+
+end
+
+
+@enduml

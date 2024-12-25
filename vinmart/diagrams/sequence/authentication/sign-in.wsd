@@ -1,0 +1,88 @@
+@startuml
+
+actor User as user
+participant "Vinmart" as vinmart
+participant "API Server" as apiServer
+database Database as database
+
+group Successful case
+
+user -> vinmart : Enter Email & Password
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: POST \nEndpoint: /api/v1/authentication/sign-in\nPayload: { email, password }
+
+activate apiServer
+
+apiServer ->> database : Query "User" table\nby "email" attribute
+
+activate database
+
+database -->> apiServer : Return user
+
+deactivate database
+
+apiServer -->> vinmart : [*] Email and Password is correct\nResponse\nMethod: POST \nEndpoint: /api/v1/authentication/sign-in\nStatus: 200\nPayload: { token }
+
+deactivate apiServer
+
+vinmart -> user : Redirect screen
+
+deactivate vinmart
+
+else Failure case 1
+
+user -> vinmart : Enter Email & Password
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: POST \nEndpoint: /api/v1/authentication/sign-in\nPayload: { email, password }
+
+activate apiServer
+
+apiServer ->> database : Query "User" table\nby "email" attribute
+
+activate database
+
+database -->> apiServer : Return user
+
+deactivate database
+
+apiServer -->> vinmart : [*] Password not match\nResponse\nMethod: POST \nEndpoint: /api/v1/authentication/sign-in\nStatus 400\nPayload: { errors }
+
+deactivate apiServer
+
+vinmart --> user : Dispay Error Message\nMessage: The username/password combination is incorrect.
+
+deactivate vinmart
+
+else Failure case 2
+
+user -> vinmart : Enter Email & Password
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: POST \nEndpoint: /api/v1/authentication/sign-in\nPayload: { email, password }
+
+activate apiServer
+
+apiServer ->> database : Query "User" table\nby "email" attribute
+
+activate database
+
+database -->> apiServer : Cannot find by "email" attribute
+
+deactivate database
+
+apiServer -->> vinmart : [*] Email is not registered\nResponse\nMethod: POST \nEndpoint: /api/v1/authentication/sign-in\nStatus 400\nPayload: { errors } 
+
+deactivate apiServer
+
+vinmart --> user: Dispay Error Message\nMessage: The username/password combination is incorrect.
+
+deactivate vinmart
+
+end
+
+@enduml

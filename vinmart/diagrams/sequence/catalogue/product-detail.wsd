@@ -1,0 +1,62 @@
+@startuml
+
+actor User as user
+participant "Vinmart" as vinmart
+participant "API Server" as apiServer
+database Database as database
+
+group Successful case
+
+user -> vinmart : User access to product detail screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: GET \nEndpoint: /api/v1/catalogue/products/:productId\nHeader: { authorization }\nPayload: {}
+
+activate apiServer
+
+apiServer ->> database : Query "Product" table joined with "Image" table \nby "productId" attribute
+
+activate database
+
+database -->> apiServer : Return product included image
+
+deactivate database
+
+apiServer -->> vinmart : [*] Get product success\nResponse\nMethod: GET \nEndpoint: /api/v1/catalogue/products/:productId\nStatus: 200\nPayload: { id, categoryId, name, ... }
+
+deactivate apiServer
+
+vinmart --> user : Render product to screen 
+
+deactivate vinmart
+
+else Failure case
+
+user -> vinmart : User access to product detail screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: GET \nEndpoint: /api/v1/catalogue/products/:productId\nHeader: { authorization }\nPayload: {}
+
+activate apiServer
+
+apiServer ->> database : Query "Product" table joined with "Image" table \nby "productId" attribute
+
+activate database
+
+database -->> apiServer : Can not find "productId"
+
+deactivate database
+
+apiServer -->> vinmart : [*] Endpoint is wrong or product deleted\nResponse\nMethod: GET \nEndpoint: /api/v1/catalogue/products/:productId\nStatus: 404\nPayload: { errors }
+
+deactivate apiServer
+
+vinmart --> user : Redirect to 404 not found screen 
+
+deactivate vinmart
+
+end
+
+@enduml

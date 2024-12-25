@@ -1,0 +1,64 @@
+@startuml
+
+actor User as user
+participant "Vinmart" as vinmart
+participant "API Server" as apiServer
+participant "OTP Authentication Service" as otpService
+
+group Successful case
+
+user ->  vinmart : Click "Resend a new code" button
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: POST \nEndpoint: /api/v1/authentication/resend-activate-otp\nHeader: { authorization }\nPayload: { phone }
+
+activate apiServer
+
+apiServer ->> otpService: Request service send code\nto user's phone number via SMS
+
+activate otpService
+
+otpService -->> apiServer: Response success
+
+group Asynchronous - SMS OTP Verification
+
+otpService -->> user : Send OTP SMS
+
+deactivate otpService
+
+end
+
+apiServer -->> vinmart : [*] OTP sent successful \nResponse\nMethod: POST \nEndpoint: /api/v1/authentication/resend-activate-otp\nStatus: 200\nPayload: {}
+
+deactivate apiServer
+
+deactivate vinmart
+
+else Failure case
+
+user ->  vinmart : Click "Resend a new code" button
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: POST \nEndpoint: /api/v1/authentication/resend-activate-otp\nHeader: { authorization }\nPayload: { phone }
+
+activate apiServer
+
+apiServer ->> otpService: Request service send code\nto user's phone number via SMS
+
+activate otpService
+
+otpService -->> apiServer: Response failure
+
+deactivate otpService
+
+apiServer -->> vinmart : [*] OTP sent failure \nResponse\nMethod: POST \nEndpoint: /api/v1/authentication/resend-activate-otp\nStatus: 400\nPayload: {}
+
+deactivate apiServer
+
+deactivate vinmart
+
+end
+
+@enduml

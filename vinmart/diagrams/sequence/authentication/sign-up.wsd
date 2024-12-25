@@ -1,0 +1,173 @@
+@startuml
+
+actor User as user
+participant "Vinmart" as vinmart
+participant "API Server" as apiServer
+participant "OTP Authentication Service" as otpService
+database Database as database
+
+group Successful case (Step 1: Sign Up Account)
+
+user ->  vinmart : Enter Email & Password
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: POST \nEndpoint: /api/v1/authentication/sign-up\nPayload: { email, password, phone, }
+
+activate apiServer
+
+apiServer ->> database : Query "User" table by "email" attribute
+
+activate database
+
+database -->> apiServer : Cannot found record
+
+apiServer ->> database : Query "Phone of User" table by "phone" attribute
+
+database -->> apiServer : Cannot found record
+
+apiServer ->> database : Create new user with status is "verifying"
+
+database -->> apiServer : Response success
+
+apiServer ->> database : Add default notification setting for created user at "User Setting" table
+
+database -->> apiServer : Response success
+
+deactivate database
+
+apiServer ->> otpService: Request service send code\nto user's phone number via SMS
+
+activate otpService
+
+otpService -->> apiServer: Response success
+
+group Asynchronous - SMS OTP Verification
+
+otpService -->> user : Send OTP SMS
+
+deactivate otpService
+
+end
+
+apiServer -->> vinmart : [*] Account created success with status "verifying"\nResponse\nMethod: POST \nEndpoint: /api/v1/authentication/sign-up\nStatus: 201\nPayload: { token }
+
+deactivate apiServer
+
+vinmart -> user : Redirect to Verify OTP screen
+
+deactivate vinmart
+
+else Failure case 1
+
+user ->  vinmart : Enter Email & Password
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: POST \nEndpoint: /api/v1/authentication/sign-up\nPayload: { email, password, phone }
+
+activate apiServer
+
+apiServer ->> database : Query "User" table by received "email" attribute
+
+activate database
+
+database -->> apiServer : Found record
+
+deactivate database
+
+apiServer -->> vinmart : [*] Entered "email" is already registered\nResponse\nMethod: POST \nEndpoint: /api/v1/authentication/sign-up\nStatus: 409\nPayload: { errors }
+
+deactivate apiServer
+
+vinmart --> user: Dispay Error Message\nMessage: Email already registered
+
+deactivate vinmart
+
+else Failure case 2
+
+user ->  vinmart : Enter Email & Password
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: POST \nEndpoint: /api/v1/authentication/sign-up\nPayload: { email, password, phone }
+
+activate apiServer
+
+apiServer ->> database : Query "User" table by "email" attribute
+
+activate database
+
+database -->> apiServer : Cannot found record
+
+apiServer ->> database : Query "Phone of User" table by "phone" attribute
+
+database -->> apiServer : Found record
+
+deactivate database
+
+apiServer -->> vinmart : [*] Entered "phone" is already registered\nResponse\nMethod: POST \nEndpoint: /api/v1/authentication/sign-up\nStatus: 409\nPayload: { errors }
+
+deactivate apiServer
+
+vinmart --> user: Dispay Error Message\nMessage: Phone already registered
+
+deactivate vinmart
+
+end
+
+group Successful case (Step 2: Verify Phone Number)
+
+user ->  vinmart : Enter OTP code
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: POST \nEndpoint: /api/v1/authentication/activate-account\nHeader: { authorization }\nPayload: { otp }
+
+activate apiServer
+
+apiServer ->> otpService: Request to verify entered OTP
+
+activate otpService
+
+otpService -->> apiServer: Response success (OTP correct)
+
+deactivate otpService
+
+apiServer -->> vinmart : [*] Account is updated with status "activated"\nResponse\nMethod: POST \nEndpoint: /api/v1/authentication/activate-account\nStatus: 200\nPayload: {}
+
+deactivate apiServer
+
+vinmart -> user : Redirect to Home screen
+
+deactivate vinmart
+
+else Failure case
+
+user ->  vinmart : Enter OTP code
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: POST \nEndpoint: /api/v1/authentication/activate-account\nHeader: { authorization }\nPayload: { otp }
+
+activate apiServer
+
+apiServer ->> otpService: Request to verify entered OTP
+
+activate otpService
+
+otpService -->> apiServer: Response failure (OTP incorrect)
+
+deactivate otpService
+
+apiServer -->> vinmart : [*] Entered OTP is incorrect\nResponse\nMethod: POST \nEndpoint: /api/v1/authentication/activate-account\nStatus: 400\nPayload: { errors }
+
+deactivate apiServer
+
+vinmart --> user: Dispay Error Message\nMessage: Incorrect OTP code
+
+deactivate vinmart
+
+end
+
+@enduml

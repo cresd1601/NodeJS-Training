@@ -1,0 +1,188 @@
+@startuml
+
+' hide the spot
+hide circle
+
+' avoid problems with angled crows feet
+skinparam linetype ortho
+
+entity "User" as user {
+  *id : string <<generated>>
+  --
+  name : string
+  *email : string
+  password_hash : string
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "User Setting" as user_setting {
+  *id : string <<generated>>
+  --
+  user_id : string <<FK>>
+  enable_email_notification : boolean
+  enable_order_notification : boolean
+  enable_general_notification : boolean
+}
+
+entity "Favorite Item" as favoriteItem {
+  *id : string <<generated>>
+  --
+  *product_id : string <<FK>>
+  *user_id : string <<FK>>
+}
+
+entity "Review" as review {
+  *id : string <<generated>>
+  --
+  *product_id : string <<FK>>
+  *user_id : string <<FK>>
+  rating : float
+  description : string
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "Product" as product {
+  *id : string <<generated>>
+  --
+  *category_id : string <<FK>>
+  *product_unit_id : string <<FK>>
+  name : string
+  description : string
+  price : float
+  quantity_stock : int
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "Product Unit" as product_unit {
+  *id : string <<generated>>
+  --
+  *name : string
+}
+
+
+entity "Category" as category {
+  *id : string <<generated>>
+  --
+  *name : string
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "Address" as address {
+  *id : string <<generated>>
+  --
+  *user_id : string <<FK>>
+  default : boolean
+  recipient_name : string
+  address : string
+  city : string
+  zip_code : int
+  country : string
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "Payment Method" as payment_method {
+  *id : string <<generated>>
+  --
+  *user_id : string <<FK>>
+  type: string
+}
+
+
+entity "Shipping Method" as shipping_method {
+  *id : string <<generated>>
+  --
+  name : string
+  description : string
+  price : float
+}
+
+entity "Cart Item" as cart_item {
+  *id : string <<generated>>
+  --
+  *user_id : string <<FK>>
+  *product_id : string <<FK>>
+  quantity : int
+}
+
+entity "Image" as image {
+  *id : string <<generated>>
+  --
+  owner_id : string
+  owner_table : string
+  url : string
+}
+
+entity "Order" as order {
+  *id : string <<generated>>
+  --
+  *user_id : string <<FK>>
+  *shipping_method_id : string <<FK>>
+  *payment_method_id : string <<FK>>
+  *address_id : string <<FK>>
+  total : float 
+}
+
+entity "Order Item" as order_item {
+  *id : string <<generated>>
+  --
+  *order_id : string <<FK>>
+  *product_id : string <<FK>>
+  quantity : int
+}
+
+entity "Order Status" as order_status {
+  *id : string <<generated>>
+  --
+  *order_id : string <<FK>>
+  status: int
+  created_at : timestamp
+}
+
+
+entity "Phone" as phone {
+  *id : string <<generated>>
+  --
+  owner_id : string
+  owner_table : string
+  phone : string
+}
+
+product }|--|| category
+product }|--|| product_unit
+
+review }|--|| user
+review }|--|| product
+
+user ||--|| user_setting
+user ||--|{ address
+
+order }o--|| user
+order }|--|| shipping_method
+order ||--|{ order_status
+
+order_item }|--|| order
+order_item }|--|| product
+
+cart_item }o--|| user
+cart_item }|--|| product
+
+image }|--|| product
+image ||--|| category
+image ||--|| user
+
+
+phone ||--|| user
+phone ||--|| address
+
+favoriteItem }o--|| product
+favoriteItem }o--|| user
+
+payment_method }|--|| user
+payment_method ||--|| order
+
+@enduml

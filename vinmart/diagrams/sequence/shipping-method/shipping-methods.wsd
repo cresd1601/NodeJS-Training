@@ -1,0 +1,120 @@
+@startuml
+
+actor User as user
+participant "Vinmart" as vinmart
+participant "API Server" as apiServer
+database Database as database
+
+group Successful case
+
+user -> vinmart : User access to shipping method screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: GET \nEndpoint: /api/v1/shipping-methods\nHeader: { authorization }\nPayload: {}
+
+activate apiServer
+
+apiServer ->> database : Query "Shipping Method" table
+
+activate database
+
+database -->> apiServer : Return shipping methods
+
+deactivate database
+
+apiServer -->> vinmart : [*] Get shipping methods success\nResponse\nMethod: GET \nEndpoint: /api/v1/shipping-methods\nStatus: 200\nPayload: { shippingMethods }
+
+deactivate apiServer
+
+vinmart --> user : Render shipping methods to screen 
+
+deactivate vinmart
+
+end
+
+group Successful case
+
+user -> vinmart : User access to shipping method screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: POST \nEndpoint: /api/v1/shipping-methods\nHeader: { authorization }\nPayload: { name, description, price }
+
+activate apiServer
+
+apiServer ->> database : Create new user's shipping method with received value
+
+activate database
+
+database -->> apiServer : Return shipping method
+
+deactivate database
+
+apiServer -->> vinmart : [*] Create new shipping method success\nResponse\nMethod: POST \nEndpoint: /api/v1/shipping-methods\nStatus: 200\nPayload: { id, name, description, price }
+
+deactivate apiServer
+
+vinmart --> user : Render shipping method to screen 
+
+deactivate vinmart
+
+end
+
+group Successful case
+
+user -> vinmart : User access to shipping method screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: PATCH \nEndpoint: /api/v1/shipping-methods/:shippingMethodId\nHeader: { authorization }\nPayload: { name, description, price }
+
+activate apiServer
+
+apiServer ->> database : Update shipping method with received value
+
+activate database
+
+database -->> apiServer : Return shipping method
+
+deactivate database
+
+apiServer -->> vinmart : [*] Update shipping method success\nResponse\nMethod: PATCH \nEndpoint: /api/v1/shipping-methods/:shippingMethodId\nStatus: 200\nPayload: { id, name, description, price }
+
+deactivate apiServer
+
+vinmart --> user : Render shipping method to screen 
+
+deactivate vinmart
+
+end
+
+group Successful case
+
+user -> vinmart : User access to shipping method screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: DELETE \nEndpoint: /api/v1/shipping-methods/:shippingMethodId\nHeader: { authorization }\nPayload: {}
+
+activate apiServer
+
+apiServer ->> database : Delete method in "Shipping Method" table by "id" attribute
+
+activate database
+
+database -->> apiServer : Response success
+
+deactivate database
+
+apiServer -->> vinmart : [*] Remove shipping method success\nResponse\nMethod: DELETE \nEndpoint: /api/v1/shipping-methods/:shippingMethodId\nStatus: 200\nPayload: {}
+
+deactivate apiServer
+
+vinmart --> user : Render update to screen
+
+deactivate vinmart
+
+end
+
+@enduml

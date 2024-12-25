@@ -1,0 +1,28 @@
+@startuml
+
+top to bottom direction
+
+actor "[1] - User" as user
+database "[4] - Database" as database
+
+package "Vinmart Service" {
+  node "[3] - Authentication Service" as authenticationService
+
+  node "[2] - Users Service" {
+    component "[5] - API Server" as apiServer
+    component "[6] - Cloud Storage Service" as cloudStorageService
+    component "[7] - Payment Service" as paymentService
+
+
+    apiServer -up-> cloudStorageService
+    apiServer -up-> paymentService
+    apiServer -down-> authenticationService
+  }
+
+  authenticationService -down-> apiServer
+
+  user -right-> apiServer
+  apiServer -right-> database
+}
+
+@enduml

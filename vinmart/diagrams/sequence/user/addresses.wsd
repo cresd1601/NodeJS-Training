@@ -1,0 +1,182 @@
+@startuml
+
+actor User as user
+participant "Vinmart" as vinmart
+participant "API Server" as apiServer
+database Database as database
+
+group Successful case
+
+user -> vinmart : User access to user's addresses screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: GET \nEndpoint: /api/v1/users/:userId/addresses\nHeader: { authorization }\nPayload: {}
+
+activate apiServer
+
+apiServer ->> database : Query "Address" table joined with "Phone" table by "phoneId" attribute
+
+activate database
+
+database -->> apiServer : Return addresses included phone of current user
+
+deactivate database
+
+apiServer -->> vinmart : [*] Get user's addresses success\nResponse\nMethod: GET \nEndpoint: /api/v1/users/:userId/addresses\nStatus: 200\nPayload: { addresses }
+
+deactivate apiServer
+
+vinmart --> user : Render user's addresses to screen 
+
+deactivate vinmart
+
+end
+
+group Successful case
+
+user -> vinmart : User access to user's addresses screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: POST \nEndpoint: /api/v1/users/:userId/addresses\nHeader: { authorization }\nPayload: { name, address, city, zipCode, country, phone, setDefault }
+
+activate apiServer
+
+apiServer ->> database : Create new user's address with received value
+
+activate database
+
+database -->> apiServer : Return address
+
+deactivate database
+
+apiServer -->> vinmart : [*] Create new user's address success\nResponse\nMethod: POST \nEndpoint: /api/v1/users/:userId/addresses\nStatus: 200\nPayload: { id, name, address, city, zipCode, country, phone, setDefault, createdAt, updatedAt }
+
+deactivate apiServer
+
+vinmart --> user : Render new user's address to screen 
+
+deactivate vinmart
+
+else Failure case 1
+
+user -> vinmart : User access to user's addresses screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: POST \nEndpoint: /api/v1/users/:userId/addresses\nHeader: { authorization }\nPayload: { name, address, city, zipCode, country, phone, setDefault }
+
+activate apiServer
+
+apiServer -->> vinmart : [*] User send wrong data format \nResponse\nMethod: POST \nEndpoint: /api/v1/users/:userId/addresses\nStatus: 400\nPayload: { errors }
+ 
+deactivate apiServer
+
+vinmart --> user: Dispay Error Message\nMessage: This is not a valid phone format
+
+deactivate vinmart
+
+end
+
+group Successful case
+
+user -> vinmart : User access to user's addresses screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: PATCH \nEndpoint: /api/v1/users/:userId/addresses/:addressId/\nHeader: { authorization }\nPayload: { name, address, city, zipCode, country, phone, setDefault }
+
+activate apiServer
+
+apiServer ->> database : Update new user's address with received value
+
+activate database
+
+database -->> apiServer : Return address
+
+deactivate database
+
+apiServer -->> vinmart : [*] Update new user's address success\nResponse\nMethod: PATCH \nEndpoint: /api/v1/users/:userId/addresses/:addressId/\nStatus: 200\nPayload: { id, name, address, city, zipCode, country, phone, setDefault, createdAt, updatedAt }
+
+deactivate apiServer
+
+vinmart --> user : Render new user's address to screen 
+
+deactivate vinmart
+
+else Failure case 1
+
+user -> vinmart : User access to user's addresses screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: PATCH \nEndpoint: /api/v1/users/:userId/addresses/:addressId/\nHeader: { authorization }\nPayload: { name, address, city, zipCode, country, phone, setDefault }
+
+activate apiServer
+
+apiServer -->> vinmart : [*] User send wrong phone format \nResponse\nMethod: PATCH \nEndpoint: /api/v1/users/:userId/addresses/:addressId/\nStatus: 400\nPayload: { errors }
+ 
+deactivate apiServer
+
+vinmart --> user: Dispay Error Message\nMessage: This is not a valid phone format
+
+deactivate vinmart
+
+end
+
+group Successful case
+
+user -> vinmart : User access to user's addresses screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: DELETE \nEndpoint: /api/v1/users/:userId/addresses/:addressId/\nHeader: { authorization }\nPayload: {}
+
+activate apiServer
+
+apiServer ->> database : Delete user's address in "Address" table by "id" attribute
+
+activate database
+
+database -->> apiServer : Response success
+
+deactivate database
+
+apiServer -->> vinmart : [*] Remove user's address success\nResponse\nMethod: DELETE \nEndpoint: /api/v1/users/:userId/addresses/:addressId/\nStatus: 200\nPayload: {}
+
+deactivate apiServer
+
+vinmart --> user : Remove address on screen
+
+deactivate vinmart
+
+else Failure case 1
+
+user -> vinmart : User access to user's addresses screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: DELETE \nEndpoint: /api/v1/users/:userId/addresses/:addressId/\nHeader: { authorization }\nPayload: {}
+
+activate apiServer
+
+apiServer ->> database : Delete user's address in "Address" table by "id" attribute
+
+activate database
+
+database -->> apiServer : Response fail
+
+deactivate database
+
+apiServer -->> vinmart : [*] Remove user's address fail\nResponse\nMethod: DELETE \nEndpoint: /api/v1/users/:userId/addresses/:addressId/\nStatus: 404\nPayload: { errors }
+
+deactivate apiServer
+
+vinmart --> user : Render update to screen
+
+deactivate vinmart
+
+end
+
+@enduml

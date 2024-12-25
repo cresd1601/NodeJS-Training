@@ -1,0 +1,210 @@
+@startuml
+
+actor User as user
+participant "Vinmart" as vinmart
+participant "API Server" as apiServer
+database Database as database
+
+group Successful case
+
+user -> vinmart : User access to home screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: GET \nEndpoint: /api/v1/users/:userId/cart-items\nHeader: { authorization }\nPayload: {}
+
+activate apiServer
+
+apiServer ->> database : Query "Cart Item" table by "user_id" attribute
+
+activate database
+
+database -->> apiServer : Return cart items
+
+deactivate database
+
+apiServer -->> vinmart : [*] Get user's cart items success\nResponse\nMethod: GET \nEndpoint: /api/v1/users/:userId/cart-items\nStatus: 200\nPayload: { cartItems }
+
+deactivate apiServer
+
+vinmart --> user : Render cart items to screen 
+
+deactivate vinmart
+
+end
+
+group Successful case
+
+user -> vinmart : User access to home screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: POST \nEndpoint: /api/v1/users/:userId/cart-items\nHeader: { authorization }\nPayload: { productId, quantity }
+
+activate apiServer
+
+apiServer ->> database : Query "Cart Item" table by "user_id" & "product_id" attributes
+
+activate database
+
+database -->> apiServer : Cannot found record
+
+apiServer ->> database : Create new cart item with received "productId" & "quantity"
+
+database -->> apiServer : Return cart item
+
+deactivate database
+
+apiServer -->> vinmart : [*] Get user's cart items success\nResponse\nMethod: POST \nEndpoint: /api/v1/users/:userId/cart-items\nStatus: 200\nPayload: { id, productId, quantity }
+
+deactivate apiServer
+
+vinmart --> user : Render update to screen 
+
+deactivate vinmart
+
+else Failure case 1
+
+user -> vinmart : User access to home screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: POST \nEndpoint: /api/v1/users/:userId/cart-items\nHeader: { authorization }\nPayload: { productId, quantity }
+
+activate apiServer
+
+apiServer ->> database : Query "Cart Item" table by "user_id" & "product_id" attributes
+
+activate database
+
+database -->> apiServer : Found record
+
+deactivate database
+
+apiServer -->> vinmart : [*] User select product already existed \nResponse\nMethod: POST \nEndpoint: /api/v1/users/:userId/cart-items\nStatus: 409\nPayload: { errors }
+ 
+deactivate apiServer
+
+vinmart --> user : Render update to screen 
+
+deactivate vinmart
+
+end
+
+group Successful case
+
+user -> vinmart : User access to shopping cart screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: PATCH \nEndpoint: /api/v1/users/:userId/cart-items/:cartItemId\nHeader: { authorization }\nPayload: { quantity }
+
+activate apiServer
+
+group If "quantity > 0"
+
+apiServer ->> database : Update user's cart item with received quantity
+
+activate database
+
+database -->> apiServer : Return cart item
+
+deactivate database
+
+apiServer -->> vinmart : [*] Update user's cart item success\nResponse\nMethod: PATCH \nEndpoint: /api/v1/users/:userId/cart-items/:cartItemId\nStatus: 200\nPayload: { id, productId, quantity }
+
+else Else If "quantity = 0"
+
+apiServer ->> database : Delete user's cart item with received quantity
+
+activate database
+
+database -->> apiServer : Response success
+
+deactivate database
+
+apiServer -->> vinmart : [*] Update user's cart item success\nResponse\nMethod: PATCH \nEndpoint: /api/v1/users/:userId/cart-items/:cartItemId\nStatus: 200\nPayload: {}
+
+end
+
+deactivate apiServer
+
+vinmart --> user : Render cart item update to screen 
+
+deactivate vinmart
+
+else Failure case 1
+
+user -> vinmart : User access to shopping cart screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: PATCH \nEndpoint: /api/v1/users/:userId/cart-items/:cartItemId\nHeader: { authorization }\nPayload: { quantity }
+
+activate apiServer
+
+apiServer -->> vinmart : [*] User send wrong data format (quantity < 0) \nResponse\nMethod: PATCH \nEndpoint: /api/v1/users/:userId/cart-items/:cartItemId\nStatus: 400\nPayload: { errors }
+ 
+deactivate apiServer
+
+vinmart --> user : Render update to screen 
+
+deactivate vinmart
+
+end
+
+group Successful case
+
+user -> vinmart : User access to shopping cart screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: DELETE \nEndpoint: /api/v1/users/:userId/cart-items/:cartItemId\nHeader: { authorization }\nPayload: {}
+
+activate apiServer
+
+apiServer ->> database : Delete user's cart item in "Cart Items" table by "id" attribute
+
+activate database
+
+database -->> apiServer : Response success
+
+deactivate database
+
+apiServer -->> vinmart : [*] Delete user's cart item success\nResponse\nMethod: DELETE \nEndpoint: /api/v1/users/:userId/cart-items/:cartItemId\nStatus: 200\nPayload: {}
+
+deactivate apiServer
+
+vinmart --> user : Remove cart item on screen
+
+deactivate vinmart
+
+else Failure case 1
+
+user -> vinmart : User access to shopping cart screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: DELETE \nEndpoint: /api/v1/users/:userId/cart-items/:cartItemId\nHeader: { authorization }\nPayload: {}
+
+activate apiServer
+
+apiServer ->> database : Delete user's cart item in "Cart Items" table by "id" attribute
+
+activate database
+
+database -->> apiServer : Response fail
+
+deactivate database
+
+apiServer -->> vinmart : [*] Delete user's cart item fail\nResponse\nMethod: DELETE \nEndpoint: /api/v1/users/:userId/cart-items/:cartItemId\nStatus: 404\nPayload: { errors }
+
+deactivate apiServer
+
+vinmart --> user : Render update to screen 
+
+deactivate vinmart
+
+end
+
+@enduml

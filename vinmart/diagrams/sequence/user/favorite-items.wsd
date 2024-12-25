@@ -1,0 +1,148 @@
+@startuml
+
+actor User as user
+participant "Vinmart" as vinmart
+participant "API Server" as apiServer
+database Database as database
+
+group Successful case
+
+user -> vinmart : User access to home screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: GET \nEndpoint: api/v1/users/:userId/favorite-items\nHeader: { authorization }\nPayload: {}
+
+activate apiServer
+
+apiServer ->> database : Query "Favorite Item" table by "user_id" attribute
+
+activate database
+
+database -->> apiServer : Return favorite items
+
+deactivate database
+
+apiServer -->> vinmart : [*] Get user's favorite items success\nResponse\nMethod: GET \nEndpoint: api/v1/users/:userId/favorite-items\nStatus: 200\nPayload: { favoriteItems }
+
+deactivate apiServer
+
+vinmart --> user : Render favorite items to screen
+
+deactivate vinmart
+
+end
+
+group Successful case
+
+user -> vinmart : User access to home screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: POST \nEndpoint: api/v1/users/:userId/favorite-items\nHeader: { authorization }\nPayload: { productId }
+
+activate apiServer
+
+apiServer ->> database : Query "Favorite Item" table by "user_id" & "product_id" attributes
+
+activate database
+
+database -->> apiServer : Cannot found record
+
+apiServer ->> database : Create new favorite item with received "productId"
+
+database -->> apiServer : Return favorite item
+
+deactivate database
+
+apiServer -->> vinmart : [*] Get user's favorite items success\nResponse\nMethod: POST \nEndpoint: api/v1/users/:userId/favorite-items\nStatus: 200\nPayload: { id, productId }
+
+deactivate apiServer
+
+vinmart --> user : Render update to screen 
+
+deactivate vinmart
+
+else Failure case 1
+
+user -> vinmart : User access to home screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: POST \nEndpoint: api/v1/users/:userId/favorite-items\nHeader: { authorization }\nPayload: { productId }
+
+activate apiServer
+
+apiServer ->> database : Query "Favorite Item" table by "user_id" & "product_id" attributes
+
+activate database
+
+database -->> apiServer : Found record
+
+deactivate database
+
+apiServer -->> vinmart : [*] User select product already existed \nResponse\nMethod: POST \nEndpoint: api/v1/users/:userId/favorite-items\nStatus: 409\nPayload: { errors }
+ 
+deactivate apiServer
+
+vinmart --> user : Render update to screen 
+
+deactivate vinmart
+
+end
+
+group Successful case
+
+user -> vinmart : User access to home screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: DELETE \nEndpoint: api/v1/users/:userId/favorite-items:favoriteItemId\nHeader: { authorization }\nPayload: {}
+
+activate apiServer
+
+apiServer ->> database : Delete user's favorite item in "Favorite Items" table by "id" attribute
+
+activate database
+
+database -->> apiServer : Response success
+
+deactivate database
+
+apiServer -->> vinmart : [*] Delete user's favorite item success\nResponse\nMethod: DELETE \nEndpoint: api/v1/users/:userId/favorite-items/:favoriteItemId\nStatus: 200\nPayload: {}
+
+deactivate apiServer
+
+vinmart --> user : Remove favorite item on screen 
+
+deactivate vinmart
+
+else Failure case 1
+
+user -> vinmart : User access to home screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: DELETE \nEndpoint: api/v1/users/:userId/favorite-items/:favoriteItemId\nHeader: { authorization }\nPayload: {}
+
+activate apiServer
+
+apiServer ->> database : Delete user's favorite item in "Favorite Items" table by "id" attribute
+
+activate database
+
+database -->> apiServer : Response fail
+
+deactivate database
+
+apiServer -->> vinmart : [*] Delete user's favorite item success\nResponse\nMethod: DELETE \nEndpoint: api/v1/users/:userId/favorite-items/:favoriteItemId\nStatus: 404\nPayload: { errors }
+
+deactivate apiServer
+
+vinmart --> user : Render to update screen
+
+deactivate vinmart
+
+end
+
+@enduml

@@ -1,0 +1,94 @@
+@startuml
+
+actor User as user
+participant "Vinmart" as vinmart
+participant "API Server" as apiServer
+database Database as database
+
+group Successful case
+
+user -> vinmart : User access to home screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: GET \nEndpoint: /api/v1/catalogue/product-units\nHeader: { authorization }\nPayload: {}
+
+activate apiServer
+
+apiServer ->> database : Query "Product Unit" table to get all product units
+
+activate database
+
+database -->> apiServer : Return all product units
+
+deactivate database
+
+apiServer -->> vinmart : [*] Get all product units success\nResponse\nMethod: GET \nEndpoint: /api/v1/catalogue/product-units\nStatus: 200\nPayload: { productUnits }
+
+deactivate apiServer
+
+vinmart --> user : Render product units list to screen 
+
+deactivate vinmart
+
+end
+
+group Successful case
+
+user -> vinmart : User access to home screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: POST \nEndpoint: /api/v1/catalogue/product-units\nHeader: { authorization }\nPayload: { name }
+
+activate apiServer
+
+apiServer ->> database : Query "Product Unit" table by "name" attribute
+
+activate database
+
+database -->> apiServer : Cannot found record
+
+apiServer ->> database : Create new product unit with inputted "name"
+
+database -->> apiServer : Return created product unit
+
+deactivate database
+
+apiServer -->> vinmart : [*] Created new product unit success\nResponse\nMethod: POST \nEndpoint: /api/v1/catalogue/product-units\nStatus: 200\nPayload: { id, name }
+
+deactivate apiServer
+
+vinmart --> user : Render product unit to screen 
+
+deactivate vinmart
+
+else Failure case 1
+
+user -> vinmart : User access to home screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: POST \nEndpoint: /api/v1/catalogue/product-units\nHeader: { authorization }\nPayload: { name }
+
+activate apiServer
+
+apiServer ->> database : Query "Product Unit" table by "name" attribute
+
+activate database
+
+database -->> apiServer : Found record
+
+deactivate database
+
+apiServer -->> vinmart : [*] Entered "name" is already registered\nResponse\nMethod: POST \nEndpoint: /api/v1/catalogue/product-units\nStatus: 409\nPayload: { errors }
+
+deactivate apiServer
+
+vinmart --> user : Dispay Error Message\nMessage: Name already registered
+
+deactivate vinmart
+
+end
+
+@enduml

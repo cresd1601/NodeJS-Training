@@ -1,0 +1,85 @@
+@startuml
+
+actor User as user
+participant "Vinmart" as vinmart
+participant "API Server" as apiServer
+participant "Cloud Storage Service" as cloudStorageService
+database Database as database
+
+group Successful case
+
+user -> vinmart : User click "update avatar" button at setting screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: PATCH \nEndpoint: /api/v1/users/:userId/avatar\nHeader: { authorization }\nPayload: { image }
+
+activate apiServer
+
+group Asynchronous - Upload Image to Cloud Storage
+
+apiServer ->> cloudStorageService: Send received image from client \nto cloud storage service
+
+activate cloudStorageService
+
+cloudStorageService -->> apiServer: Response success & return uploaded image URL
+
+deactivate cloudStorageService
+
+end
+
+apiServer ->> database: Update new URL to "Image" table by "userId" attribute
+
+activate database
+
+database -->> apiServer : Response success
+
+deactivate database
+
+apiServer -->> vinmart : [*] Update user's avatar success\nResponse\nMethod: PATCH \nEndpoint: /api/v1/users/:userId/avatar\nStatus: 200\nPayload: { image }
+
+deactivate apiServer
+
+vinmart --> user : Render updated avatar to setting screen
+
+deactivate vinmart
+
+else Failure case 1
+
+user -> vinmart : User click "update avatar" button at setting screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: PATCH \nEndpoint: /api/v1/users/:userId/avatar\nHeader: { authorization }\nPayload: { image }
+
+activate apiServer
+
+apiServer -->> vinmart : [*] Uploaded file with unsupported media type \nResponse\nMethod: PATCH \nEndpoint: /api/v1/users/:userId/avatar\nStatus: 415\nPayload: { errors }
+
+deactivate apiServer
+
+vinmart --> user: Dispay Error Message\nMessage: The image uploaded with wrong media type
+
+deactivate vinmart
+
+else Failure case 2
+
+user -> vinmart : User click "update avatar" button at setting screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: PATCH \nEndpoint: /api/v1/users/:userId/avatar\nHeader: { authorization }\nPayload: { image }
+
+activate apiServer
+
+apiServer -->> vinmart : [*] Uploaded file too large\nResponse\nMethod: PATCH \nEndpoint: /api/v1/users/:userId/avatar\nStatus: 413\nPayload: { errors }
+
+deactivate apiServer
+
+vinmart --> user: Dispay Error Message\nMessage: The image uploaded with too large size
+
+deactivate vinmart
+
+end
+
+@enduml

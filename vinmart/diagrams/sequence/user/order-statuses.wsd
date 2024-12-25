@@ -1,0 +1,36 @@
+@startuml
+
+actor User as user
+participant "Vinmart" as vinmart
+participant "API Server" as apiServer
+database Database as database
+
+group Successful case
+
+user -> vinmart : User access to order screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: GET \nEndpoint: /api/v1/users/:userId/order-statuses\nHeader: { authorization }\nPayload: {}
+
+activate apiServer
+
+apiServer ->> database : Query "Order Status" table to get all user's order statuses
+
+activate database
+
+database -->> apiServer : Return order statuses
+
+deactivate database
+
+apiServer -->> vinmart : [*] Get orders success\nResponse\nMethod: GET \nEndpoint: /api/v1/users/:userId/order-statuses\nStatus: 200\nPayload: { orderStatuses }
+
+deactivate apiServer
+
+vinmart --> user : Render orders to screen 
+
+deactivate vinmart
+
+end
+
+@enduml

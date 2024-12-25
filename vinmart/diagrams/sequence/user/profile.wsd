@@ -1,0 +1,128 @@
+@startuml
+
+actor User as user
+participant "Vinmart" as vinmart
+participant "API Server" as apiServer
+database Database as database
+
+group Successful case
+
+user -> vinmart : User access to update profile screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: GET \nEndpoint: /api/v1/users/:userId/profile\nHeader: { authorization }\nPayload: {}
+
+activate apiServer
+
+apiServer ->> database : Query "User" table joined with "Phone" & "Image" table by "userId" attribute
+
+activate database
+
+database -->> apiServer : Return user included image and phone
+
+deactivate database
+
+apiServer -->> vinmart : [*] Get user's profile success\nResponse\nMethod: GET \nEndpoint: /api/v1/users/:userId/profile\nStatus: 200\nPayload: { email, image, name, phone }
+
+deactivate apiServer
+
+vinmart --> user : Render user profile to screen 
+
+deactivate vinmart
+
+end
+
+group Successful case
+
+user -> vinmart : User access to update user profile screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: PATCH \nEndpoint: /api/v1/users/:userId/profile\nHeader: { authorization }\nPayload: { email, name, phone }
+
+activate apiServer
+
+apiServer ->> database : Query "User" table by received "email" attribute
+
+activate database
+
+database -->> apiServer : Cannot found record
+
+apiServer ->> database : Query "Phone of User" table by "phone" attribute
+
+database -->> apiServer : Cannot found record
+
+apiServer ->> database : Update user's profile with received value
+
+database -->> apiServer : Return user
+
+deactivate database
+
+apiServer -->> vinmart : [*] Update user's profile success\nResponse\nMethod: PATCH \nEndpoint: /api/v1/users/:userId/profile\nStatus: 200\nPayload: { email, name, phone }
+
+deactivate apiServer
+
+vinmart --> user : Redirect to Setting screen
+
+deactivate vinmart
+
+else Failure case 1
+
+user -> vinmart : User access to update user profile screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: PATCH \nEndpoint: /api/v1/users/:userId/profile\nHeader: { authorization }\nPayload: { email, name, phone }
+
+activate apiServer
+
+apiServer ->> database : Query "User" table by received "email" attribute
+
+activate database
+
+database -->> apiServer : Found record
+
+deactivate database
+
+apiServer -->> vinmart : [*] Email is already registered by another user\nResponse\nMethod: PATCH \nEndpoint: /api/v1/users/:userId/profile\nStatus: 409\nPayload: { errors }
+ 
+deactivate apiServer
+
+vinmart --> user: Dispay Error Message\nMessage: Email already registered
+
+deactivate vinmart
+
+else Failure case 2
+
+user -> vinmart : User access to update user profile screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: PATCH \nEndpoint: /api/v1/users/:userId/profile\nHeader: { authorization }\nPayload: { email, name, phone }
+
+activate apiServer
+
+apiServer ->> database : Query "User" table by received "email" attribute
+
+activate database
+
+database -->> apiServer : Cannot found record
+
+apiServer ->> database : Query "Phone of User" table by "phone" attribute
+
+database -->> apiServer : Found record
+
+deactivate database
+
+apiServer -->> vinmart : [*] Phone number is already registered by another\nResponse\nMethod: PATCH \nEndpoint: /api/v1/users/:userId/profile\nStatus: 409\nPayload: { errors }
+ 
+deactivate apiServer
+
+vinmart --> user: Dispay Error Message\nMessage: Phone number is already registered by another
+
+deactivate vinmart
+
+end
+
+@enduml

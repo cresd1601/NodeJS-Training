@@ -1,0 +1,92 @@
+@startuml
+
+actor User as user
+participant "Vinmart" as vinmart
+participant "API Server" as apiServer
+database Database as database
+
+group Successful case
+
+user -> vinmart : User access to payment method screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: GET \nEndpoint: api/v1/users/:userId/payment-methods\nHeader: { authorization }\nPayload: {}
+
+activate apiServer
+
+apiServer ->> database : Query "Payment Method" table
+
+activate database
+
+database -->> apiServer : Return payment methods
+
+deactivate database
+
+apiServer -->> vinmart : [*] Get payment methods success\nResponse\nMethod: GET \nEndpoint: api/v1/users/:userId/payment-methods\nStatus: 200\nPayload: { paymentMethods }
+
+deactivate apiServer
+
+vinmart --> user : Render payment methods to screen 
+
+deactivate vinmart
+
+end
+
+group Successful case
+
+user -> vinmart : User access to payment method screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: POST \nEndpoint: api/v1/users/:userId/payment-methods\nHeader: { authorization }\nPayload: { type }
+
+activate apiServer
+
+apiServer ->> database : Create new user's payment method with received value
+
+activate database
+
+database -->> apiServer : Return payment method
+
+deactivate database
+
+apiServer -->> vinmart : [*] Create new payment method success\nResponse\nMethod: POST \nEndpoint: api/v1/users/:userId/payment-methods\nStatus: 200\nPayload: { id, type }
+
+deactivate apiServer
+
+vinmart --> user : Render payment method to screen 
+
+deactivate vinmart
+
+end
+
+group Successful case
+
+user -> vinmart : User access to payment method screen
+
+activate vinmart
+
+vinmart ->> apiServer : Request\nMethod: DELETE \nEndpoint: api/v1/users/:userId/payment-methods/:paymentMethodId\nHeader: { authorization }\nPayload: {}
+
+activate apiServer
+
+apiServer ->> database : Delete method in "Payment Method" table by "id" & "user_id" attribute
+
+activate database
+
+database -->> apiServer : Response success
+
+deactivate database
+
+apiServer -->> vinmart : [*] Remove payment method success\nResponse\nMethod: DELETE \nEndpoint: api/v1/users/:userId/payment-methods/:paymentMethodId\nStatus: 200\nPayload: {}
+
+deactivate apiServer
+
+vinmart --> user : Render update to screen
+
+deactivate vinmart
+
+end
+
+@enduml
